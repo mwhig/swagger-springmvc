@@ -76,7 +76,7 @@ or, simply using a `throws` declaration:
 ## Example project
 An example of Swaggers PetStore in Spring MVC is available [here](https://github.com/martypitt/swagger-springmvc-example)
 
-## TODO:
+## Hard problem TODO:
 - Handle the case where RequestMapping might have wildcards
 
 License

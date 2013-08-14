@@ -26,7 +26,7 @@ public class PrimitiveMemberVisitor implements MemberVisitor {
             propertyType = returnType.getSimpleName().toLowerCase();
         }
         DocumentationSchema propertySchema = new DocumentationSchema();
-        propertySchema.setName(member.getName());
+        propertySchema.setName(member.getNamedM());
         propertySchema.setType(propertyType);
         return propertySchema;
     }
