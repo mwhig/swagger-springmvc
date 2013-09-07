@@ -22,8 +22,8 @@ import java.util.List;
 import static com.google.common.collect.Lists.*;
 
 @Controller
-@RequestMapping("/alternativePets")
-@Api(value="", description="Operations about pets", listingPath = "alternativePets")
+@RequestMapping("/features")
+@Api(value="", description="Demonstration of features", listingPath = "features")
 public class FeatureDemonstrationService {
 
     //Uses alternate listing path
