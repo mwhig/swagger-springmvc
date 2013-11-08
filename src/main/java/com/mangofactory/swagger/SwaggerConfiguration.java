@@ -97,7 +97,8 @@ public class SwaggerConfiguration {
             @Override
             public boolean apply(TypeProcessingRule input) {
                 return (hasWildcards(input.originalType()) && wildcardMatch(parameterType, input.originalType()))
-                        || exactMatch(input.originalType(), parameterType);
+                        || exactMatch(input.originalType(), parameterType) 
+                        || packageMatch(input, parameterType);
             }
         }, new DefaultProcessingRule(parameterType.getErasedType()));
     }

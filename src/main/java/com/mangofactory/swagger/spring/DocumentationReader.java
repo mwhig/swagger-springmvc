@@ -1,17 +1,8 @@
 package com.mangofactory.swagger.spring;
 
-import com.mangofactory.swagger.ControllerDocumentation;
-import com.mangofactory.swagger.SwaggerConfiguration;
-import com.wordnik.swagger.core.Documentation;
-import com.wordnik.swagger.core.DocumentationEndPoint;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
-import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.mangofactory.swagger.spring.DocumentationEndPoints.asDocumentation;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,9 +10,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.*;
-import static com.mangofactory.swagger.spring.DocumentationEndPoints.*;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+
+import com.mangofactory.swagger.ControllerDocumentation;
+import com.mangofactory.swagger.SwaggerConfiguration;
+import com.wordnik.swagger.core.Documentation;
+import com.wordnik.swagger.core.DocumentationEndPoint;
 
 @Slf4j
 public class DocumentationReader {
@@ -73,7 +75,7 @@ public class DocumentationReader {
                 endpoints.add(endpointByControllerLookup.get(key));
             }
         }
-        if (!endpoints.isEmpty()) {
+        if (!endpoints.isEmpty() && resource.getControllerUris().size() == endpoints.size() ) {
             return endpoints;
         }
 
@@ -100,7 +102,7 @@ public class DocumentationReader {
         for (Entry<RequestMappingInfo, HandlerMethod> entry : handlerMapping.getHandlerMethods().entrySet()) {
             HandlerMethod handlerMethod = entry.getValue();
             RequestMappingInfo mappingInfo = entry.getKey();
-
+            
             ControllerAdapter resource = new ControllerAdapter(documentation, handlerMethod, configuration);
 
             // Don't document our own controllers
@@ -113,11 +115,14 @@ public class DocumentationReader {
                         asDocumentation(documentation, toApiUri(endPoint.path()), configuration.getSchemaProvider()));
 
                 for (String requestUri : mappingInfo.getPatternsCondition().getPatterns()) {
+                    requestUri = new UriBuilder(requestUri, true).toString();
                     DocumentationEndPoint childEndPoint = endpointReader.readEndpoint(handlerMethod, resource,
                             requestUri);
                      String resourcePath = controllerDocumentation.getResourcePath();
                   if (requestUri.contains(resourcePath)
                             || resourcePathMatchesController(resourcePath, resource)) {
+                          //Everything looks hunky dory, so now just change the path to be displayed for documentation.
+                        childEndPoint.setPath(requestUri);
                         controllerDocumentation.addEndpoint(childEndPoint);
                         appendOperationsToEndpoint(controllerDocumentation, mappingInfo, handlerMethod, childEndPoint,
                                 mappingInfo.getParamsCondition());

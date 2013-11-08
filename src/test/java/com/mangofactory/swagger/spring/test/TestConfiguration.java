@@ -21,6 +21,11 @@ public class TestConfiguration {
                                                      ExtensibilityModule extensibility) {
         SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration("2.0", "/some-path");
         swaggerConfiguration.getExcludedResources().add("/excluded");
+//        swaggerConfiguration.getExcludedResources().add("/pets");
+//        swaggerConfiguration.getExcludedResources().add("/alternativePets");
+//        swaggerConfiguration.getExcludedResources().add("/business-service");
+//        swaggerConfiguration.getExcludedResources().add("/businesses");
+//        swaggerConfiguration.getExcludedResources().add("/business");
         return extensibility.apply(defaultConfig.apply(swaggerConfiguration));
     }
 

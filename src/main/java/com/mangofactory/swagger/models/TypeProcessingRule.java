@@ -7,5 +7,5 @@ public  interface TypeProcessingRule {
     boolean hasAlternateType();
     ResolvedType originalType();
     ResolvedType alternateType(ResolvedType parameterType);
+//    boolean matches(ResolvedType type);
 }
-

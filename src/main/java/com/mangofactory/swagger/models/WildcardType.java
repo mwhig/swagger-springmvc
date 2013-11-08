@@ -26,6 +26,28 @@ public class WildcardType {
     public static boolean exactMatch(ResolvedType first, ResolvedType second) {
         return first.equals(second);
     }
+    
+    public static boolean packageMatch( TypeProcessingRule rule, ResolvedType type )
+    {
+            if ( !IgnorablePackageRule.class.isAssignableFrom(rule.getClass()) || type == null ) {
+                    return false;
+            }
+            IgnorablePackageRule pkgRule = (IgnorablePackageRule)rule;
+            Class<?> erasedType = type.getErasedType();
+            if ( erasedType == null ) { 
+                    return false;
+            }
+            if ( erasedType.isArray() ) {
+                    erasedType = erasedType.getComponentType();
+            }
+            String typePackageName;
+            if ( erasedType.isPrimitive() ) {
+                    typePackageName = "java.lang";
+            } else {
+                    typePackageName = erasedType.getPackage().getName();
+            }
+            return typePackageName.startsWith(pkgRule.ignoredPackage.getName());
+    }
 
     public static boolean wildcardMatch(ResolvedType toMatch, ResolvedType wildcardType) {
         TypeBindings wildcardTypeBindings = wildcardType.getTypeBindings();

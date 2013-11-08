@@ -2,10 +2,13 @@ package com.mangofactory.swagger.spring;
 
 import com.mangofactory.swagger.ControllerDocumentation;
 import com.mangofactory.swagger.spring.controller.DocumentationController;
+import com.mangofactory.swagger.spring.test.Pet;
 import com.mangofactory.swagger.spring.test.TestConfiguration;
 import com.wordnik.swagger.core.Documentation;
 import com.wordnik.swagger.core.DocumentationEndPoint;
 import com.wordnik.swagger.core.DocumentationOperation;
+import com.wordnik.swagger.core.DocumentationParameter;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +21,7 @@ import org.springframework.test.web.server.test.context.WebContextLoader;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -30,85 +34,139 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(
-        loader = WebContextLoader.class,
-        classes = TestConfiguration.class)
+@ContextConfiguration(loader = WebContextLoader.class, classes = TestConfiguration.class)
 public class DocumentationReaderTest {
 
-    @Autowired
-    private DocumentationController controller;
-    @Mock
-    private HttpServletRequest request;
-    private Documentation resourceListing;
-    private DocumentationEndPoint petsEndpoint;
-    private DocumentationEndPoint businessEndpoint;
+        @Autowired
+        private DocumentationController controller;
+        @Mock
+        private HttpServletRequest request;
+        private Documentation resourceListing;
+        private DocumentationEndPoint petsEndpoint;
+        private DocumentationEndPoint businessEndpoint;
 
+        @Before
+        public void setup() {
+                MockitoAnnotations.initMocks(this);
+                when(
+                                request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE))
+                                .thenReturn("/pets");
+                resourceListing = controller.getResourceListing();
+                for (DocumentationEndPoint endPoint : resourceListing.getApis()) {
+                        if ("/api-docs/pets".equals(endPoint.getPath())) {
+                                petsEndpoint = endPoint;
+                        } else if ("/api-docs/business-controller"
+                                        .equals(endPoint.getPath())) {
+                                businessEndpoint = endPoint;
+                        }
+                }
 
-    @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
-        when(request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE)).thenReturn("/pets");
-        resourceListing = controller.getResourceListing();
-        for (DocumentationEndPoint endPoint : resourceListing.getApis()) {
-            if("/api-docs/pets".equals(endPoint.getPath())) {
-                petsEndpoint = endPoint;
-            } else if("/api-docs/business-controller".equals(endPoint.getPath())) {
-                businessEndpoint = endPoint;
-            }
         }
 
-    }
-
-    @Test
-    public void rootDocumentationEndpointPointsToApiDocs() {
-        assertThat(petsEndpoint.getPath(), equalTo("/api-docs/pets"));
-    }
-
-    @Test
-    public void expectExcludedResourcesToBeExcluded() {
-        for (DocumentationEndPoint endPoint : resourceListing.getApis()) {
-            if("/api-docs/excluded".equals(endPoint.getPath())) {
-                fail("Excluded resources should not be documented");
-            }
+        @Test
+        public void rootDocumentationEndpointPointsToApiDocs() {
+                assertThat(petsEndpoint.getPath(), equalTo("/api-docs/pets"));
         }
-    }
 
-    @Test
-    public void findsDeclaredHandlerMethods() {
-        assertThat(resourceListing.getApis().size(), equalTo(3));
-        assertEquals("/api-docs/pets", petsEndpoint.getPath());
-        Documentation petsDocumentation = controller.getApiDocumentation(request);
-        assertThat(petsDocumentation, is(notNullValue()));
-    }
+        @Test
+        public void expectExcludedResourcesToBeExcluded() {
+                for (DocumentationEndPoint endPoint : resourceListing.getApis()) {
+                        if ("/api-docs/excluded".equals(endPoint.getPath())) {
+                                fail("Excluded resources should not be documented");
+                        }
+                }
+        }
 
-    @Test
-    public void findsExpectedMethods() {
-        ControllerDocumentation petsDocumentation = controller.getApiDocumentation(request);
-        DocumentationOperation operation = petsDocumentation.getEndPoint("/pets/{petId}",
-                RequestMethod.GET).iterator().next();
-        assertThat(operation, is(notNullValue()));
-        assertThat(operation.getParameters().size(), equalTo(1));
+        @Test
+        public void findsDeclaredHandlerMethods() {
+                assertThat(resourceListing.getApis().size(), equalTo(4));
+                assertEquals("/api-docs/pets", petsEndpoint.getPath());
+                Documentation petsDocumentation = controller
+                                .getApiDocumentation(request);
+                assertThat(petsDocumentation, is(notNullValue()));
+        }
 
-        operation = petsDocumentation.getEndPoint("/pets/allMethodsAllowed", RequestMethod.GET).iterator().next();
-        assertThat(operation, is(notNullValue()));
-        operation = petsDocumentation.getEndPoint("/pets/allMethodsAllowed", RequestMethod.POST).iterator().next();
-        assertThat(operation, is(notNullValue()));
-        operation = petsDocumentation.getEndPoint("/pets/allMethodsAllowed", RequestMethod.DELETE).iterator().next();
-        assertThat(operation, is(notNullValue()));
-        operation = petsDocumentation.getEndPoint("/pets/allMethodsAllowed", RequestMethod.PUT).iterator().next();
-        assertThat(operation, is(notNullValue()));
-    }
+        @Test
+        public void findsExpectedMethods() {
+                ControllerDocumentation petsDocumentation = controller
+                                .getApiDocumentation(request);
+                DocumentationOperation operation = petsDocumentation
+                                .getEndPoint("/pets/{petId}", RequestMethod.GET)
+                                .iterator().next();
+                assertThat(operation, is(notNullValue()));
+                assertThat(operation.getParameters().size(), equalTo(1));
 
-    @Test
-    public void shouldLocateDocsOnControllerWithoutTopLevelRequestMapping(){
-        when(request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE)).thenReturn("/business-service");
-        resourceListing = controller.getResourceListing();
+                operation = petsDocumentation
+                                .getEndPoint("/pets/allMethodsAllowed",
+                                                RequestMethod.GET).iterator()
+                                .next();
+                assertThat(operation, is(notNullValue()));
+                operation = petsDocumentation
+                                .getEndPoint("/pets/allMethodsAllowed",
+                                                RequestMethod.POST).iterator()
+                                .next();
+                assertThat(operation, is(notNullValue()));
+                operation = petsDocumentation
+                                .getEndPoint("/pets/allMethodsAllowed",
+                                                RequestMethod.DELETE)
+                                .iterator().next();
+                assertThat(operation, is(notNullValue()));
+                operation = petsDocumentation
+                                .getEndPoint("/pets/allMethodsAllowed",
+                                                RequestMethod.PUT).iterator()
+                                .next();
+                assertThat(operation, is(notNullValue()));
+        }
 
-        ControllerDocumentation documentation = controller.getApiDocumentation(request);
-        List<DocumentationOperation> endPoint = documentation.getEndPoint("/businesses/{businessId}", RequestMethod.GET);
-        DocumentationOperation operation = endPoint.iterator().next();
-        assertThat(operation, is(notNullValue()));
-        assertThat(operation.getParameters().size(), equalTo(1));
-        assertThat(operation.getSummary(), equalTo("Find a business by its id"));
-    }
+        @Test
+        public void shouldLocateDocsOnControllerWithoutTopLevelRequestMapping() {
+                when(
+                                request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE))
+                                .thenReturn("/business-service");
+                resourceListing = controller.getResourceListing();
+
+                ControllerDocumentation documentation = controller
+                                .getApiDocumentation(request);
+                List<DocumentationOperation> endPoint = documentation
+                                .getEndPoint("/businesses/{businessId}",
+                                                RequestMethod.GET);
+                DocumentationOperation operation = endPoint.iterator().next();
+                assertThat(operation, is(notNullValue()));
+                assertThat(operation.getParameters().size(), equalTo(1));
+                assertThat(operation.getSummary(),
+                                equalTo("Find a business by its id"));
+        }
+
+        @Test
+        public final void testRegexStripping() {
+                when(request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE))
+                        .thenReturn("/petsregex");
+                
+                ControllerDocumentation petsDocs = controller
+                                .getApiDocumentation(request);
+                                
+                DocumentationOperation op = petsDocs
+                                .getEndPoint("/petsregex/{id}{ext}",
+                                                RequestMethod.PUT).iterator()
+                                .next();
+                assertThat(op, is(notNullValue()));
+                assertThat(op.getParameters().size(), equalTo(3));
+                assertThat(op.getResponseClass(), equalTo("Pet"));
+                List<DocumentationParameter> params = op.getParameters();
+                System.out.println(params);
+//                DocumentationOperation op = petsDocs
+//                                .getEndPoint("/petsregex/name/{petName}{ext}",
+//                                                RequestMethod.GET).iterator()
+//                                .next();
+//                assertThat(op, is(notNullValue()));
+//                assertThat(op.getParameters().size(), equalTo(2));
+//                assertThat(op.getResponseClass(), equalTo("List[Pet]"));
+//
+//                op = petsDocs.getEndPoint("/petsregex/{id}/status{ext}",
+//                                RequestMethod.GET).iterator().next();
+//                assertThat(op, is(notNullValue()));
+//                assertThat(op.getParameters().size(), equalTo(2));
+//                assertThat(op.getResponseClass(), op.getResponseClass(),
+//                                is(String.class));
+        }
 }
