@@ -2,4 +2,6 @@
 swagger-springmvc.iml
 target
 .project
+.classpath
+.settings/
 /bin
